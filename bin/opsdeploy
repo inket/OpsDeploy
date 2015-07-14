@@ -1,0 +1,18 @@
+#!/usr/bin/env ruby
+
+require 'ops_deploy'
+
+cli = OpsDeploy::CLI.new
+
+if OpsDeploy::CLI.argument("check-server")
+  cli.start_check_server
+else
+  stack = OpsDeploy::CLI.argument("stack", "STACK_ID")
+  app_id = OpsDeploy::CLI.argument("app-id", "APP_ID")
+  migrate = OpsDeploy::CLI.argument("migrate")
+  check_via_proxy = OpsDeploy::CLI.argument("check-via-proxy")
+
+  cli.start_deployment(stack, app_id, migrate) if OpsDeploy::CLI.argument("deploy")
+  cli.wait_for_deployments(stack) if OpsDeploy::CLI.argument("wait")
+  cli.check_instances(stack, check_via_proxy) if OpsDeploy::CLI.argument("check") or check_via_proxy
+end

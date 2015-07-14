@@ -1,0 +1,220 @@
+class OpsDeploy::CLI
+  def initialize
+    config = {
+      region: OpsDeploy::CLI.argument("aws-region", "AWS_REGION", true),
+    }
+
+    profile = OpsDeploy::CLI.argument("aws-profile", "AWS_PROFILE")
+    config[:credentials] = Aws::SharedCredentials.new(profile_name: profile) if profile
+
+    @main = OpsDeploy.new(config)
+    @stacks = {}
+    @notifier = OpsDeploy::CLI::Notifier.new({
+      slack: {
+        webhook_url: OpsDeploy::CLI.argument("slack-webhook-url", "SLACK_WEBHOOK_URL"),
+        username: OpsDeploy::CLI.argument("slack-username", "SLACK_USERNAME"),
+        channel: OpsDeploy::CLI.argument("slack-channel", "SLACK_CHANNEL")
+      }
+    })
+
+    @notification_messages = {
+      info: [],
+      success: [],
+      failure: []
+    }
+    @notification_success = false
+    @notification_failure = false
+  end
+
+  def start_deployment(stack_id_name_or_object, application_id = nil, migrate = false)
+    stack = find_stack(stack_id_name_or_object)
+
+    step_msg("Starting deployment on stack", "'#{stack.name.blue}'...")
+
+    if @main.start_deployment(stack, application_id, migrate)
+      success_msg("Deployment started on stack", "'#{stack.name.green}'")
+      send_notification(stack)
+
+      true
+    else
+      failure_msg("Couldn't start deployment on stack", "'#{stack.name.red}'")
+      send_notification(stack)
+
+      false
+    end
+  end
+
+  def wait_for_deployments(stack_id_name_or_object)
+    stack = find_stack(stack_id_name_or_object)
+
+    step_msg("Checking deployments...")
+    @main.deployments_callback = Proc.new {
+      |deployment|
+
+      puts
+
+      if (deployment.status == "successful")
+        success_msg("Deployment", "OK".green.bold, deployment.duration ? "(#{deployment.duration.to_s}s)" : "")
+      else
+        failure_msg("Deployment", "Failed".red.bold, deployment.duration ? "(#{deployment.duration.to_s}s)" : "")
+      end
+    }
+
+    waiter = @main.wait_for_deployments(stack)
+    if waiter
+      step_msg("Waiting for deployments to finish...")
+
+      print ".".blue
+      print ".".blue until waiter.join(1)
+
+      info_msg("Deployments finished")
+    else
+      info_msg("No running deployments on stack", "'#{stack_id_name_or_object.blue}'")
+    end
+
+    send_notification(stack)
+  end
+
+  def check_instances(stack_id_name_or_object, via_proxy = false)
+    stack = find_stack(stack_id_name_or_object)
+
+    if via_proxy
+      Pusher.url = OpsDeploy::CLI.argument("pusher-url", "PUSHER_URL", true)
+      Pusher['OpsDeploy'].trigger('check_instances', {
+        stack: stack.stack_id
+      })
+    else
+      @main.instances_check_callback = Proc.new {
+        |instance, response, error|
+
+        puts
+
+        if (error.nil? and response.code == 200)
+          success_msg("Response from", "#{instance.hostname.green}:", "200 OK".green)
+        elsif error.nil?
+          failure_msg("Response from", "#{instance.hostname.red}:", "#{response.code}".red)
+        else
+          failure_msg("Error checking", "#{instance.hostname.red}:", error.to_s)
+        end
+      }
+
+      waiter = @main.check_instances(stack)
+      if waiter
+        step_msg("Checking instances' HTTP response...")
+
+        print ".".blue
+        print ".".blue until waiter.join(1)
+
+        info_msg("Response check finished")
+      else
+        info_msg("No online instances on stack", "'#{stack_id_name_or_object.blue}'")
+      end
+
+      send_notification(stack)
+    end
+  end
+
+  def start_check_server
+    pusher_comp = URI.parse(OpsDeploy::CLI.argument("pusher-url", "PUSHER_URL", true))
+    PusherClient.logger.level = Logger::ERROR
+    socket = PusherClient::Socket.new(pusher_comp.user, secure: true)
+    socket.subscribe("OpsDeploy")
+    socket["OpsDeploy"].bind("check_instances") do |data|
+      begin
+        info = data
+        info = JSON.parse(data) if data.kind_of?(String)
+        stack_id = info["stack"] || info[:stack]
+
+        check_instances(stack_id)
+      rescue StandardError => e
+        puts e
+      end
+    end
+
+    info_msg("Started OpsDeploy server")
+    socket.connect
+  end
+
+  def self.argument(argv_name, env_name = nil, required = false)
+    value = nil
+    value = ENV[env_name] if env_name
+
+    if value.nil?
+      value = ARGV.include?(argv_name) ? true : nil
+      return value if value
+
+      ARGV.each {
+        |arg|
+        if arg.start_with?("--#{argv_name}=")
+          value = arg.split("--#{argv_name}=").last
+        end
+      }
+    end
+
+    if required && value.nil?
+      raise StandardError.new("Argument '#{argv_name}' unspecified. Please set #{env_name ? 'the environment variable '+env_name+' or ' : ''}the argument --#{argv_name}=<value>")
+    end
+
+    value
+  end
+
+  private
+
+  def find_stack(stack_id_name_or_object)
+    if stack_id_name_or_object.kind_of?(String)
+      hash = stack_id_name_or_object.hash
+
+      if @stacks[hash].nil?
+        step_msg("Getting stack", "'#{stack_id_name_or_object.blue}'...")
+        stack = @main.find_stack(stack_id_name_or_object)
+        step_msg("Found stack", "'#{stack.name.blue}' (#{stack.stack_id})")
+
+        @notifier.messages.info.pop
+        @notifier.messages.info.pop
+
+        @stacks[hash] = stack
+      end
+
+      @stacks[hash]
+    else
+      @main.find_stack(stack_id_name_or_object)
+    end
+  end
+
+  def success_msg(*args)
+    message = "✓ ".green+args.join(" ")
+    @notifier.messages.success << message
+    @notifier.notification_type = :success unless @notifier.notification_type == :failure
+    puts message
+    message
+  end
+
+  def info_msg(*args)
+    message = "// ".blue+args.join(" ")
+    @notifier.messages.info << message
+    puts message
+    message
+  end
+
+  def failure_msg(*args)
+    message = "╳  ".red+args.join(" ")
+    @notifier.messages.failure << message
+    @notifier.notification_type = :failure
+    puts message
+    message
+  end
+
+  def step_msg(*args)
+    message = "-> ".cyan+args.join(" ")
+    @notifier.messages.info << message
+    puts message
+    message
+  end
+
+  def send_notification(stack)
+    @notifier.notify(stack)
+    @notifier.reset
+  end
+end
+
+require_relative "cli/notifier"

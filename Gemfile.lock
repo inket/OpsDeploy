@@ -1,0 +1,62 @@
+PATH
+  remote: .
+  specs:
+    ops_deploy (0.1.0)
+
+GEM
+  remote: http://rubygems.org/
+  specs:
+    aws-sdk (2.1.4)
+      aws-sdk-resources (= 2.1.4)
+    aws-sdk-core (2.1.4)
+      jmespath (~> 1.0)
+    aws-sdk-resources (2.1.4)
+      aws-sdk-core (= 2.1.4)
+    byebug (4.0.5)
+      columnize (= 0.9.0)
+    coderay (1.1.0)
+    colorize (0.7.7)
+    columnize (0.9.0)
+    httparty (0.13.5)
+      json (~> 1.8)
+      multi_xml (>= 0.5.2)
+    httpclient (2.6.0.1)
+    jmespath (1.0.2)
+      multi_json (~> 1.0)
+    json (1.8.3)
+    method_source (0.8.2)
+    multi_json (1.11.2)
+    multi_xml (0.5.5)
+    pry (0.10.1)
+      coderay (~> 1.1.0)
+      method_source (~> 0.8.1)
+      slop (~> 3.4)
+    pry-byebug (3.1.0)
+      byebug (~> 4.0)
+      pry (~> 0.10)
+    pusher (0.14.5)
+      httpclient (~> 2.5)
+      multi_json (~> 1.0)
+      signature (~> 0.1.8)
+    pusher-client (0.6.2)
+      json
+      websocket (~> 1.0)
+    rake (10.4.2)
+    signature (0.1.8)
+    slack-notifier (1.2.1)
+    slop (3.6.0)
+    websocket (1.2.2)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  aws-sdk
+  colorize
+  httparty
+  ops_deploy!
+  pry-byebug
+  pusher
+  pusher-client
+  rake
+  slack-notifier
