@@ -1,6 +1,5 @@
 require "aws-sdk"
 require "httparty"
-require "pry-byebug"
 require "colorize"
 require "slack-notifier"
 require "pusher"

@@ -16,4 +16,11 @@ Gem::Specification.new do |s|
   s.require_path              = 'lib'
   s.executables               = ["opsdeploy"]
   s.license                   = 'MIT'
+
+  s.add_dependency "aws-sdk", "~> 2.1"
+  s.add_dependency "httparty", "~> 0.13"
+  s.add_dependency "colorize", "~> 0.7"
+  s.add_dependency "slack-notifier", "~> 1.2"
+  s.add_dependency "pusher", "~> 0.14"
+  s.add_dependency "pusher-client", "~> 0.6"
 end
