@@ -132,7 +132,6 @@ class OpsDeploy
       begin
         if application_id_name_or_object.match(/^[0-9a-f\-]+$/)
           found_app = @opsworks.describe_apps({
-            stack_id: stack.stack_id,
             app_ids: [application_id_name_or_object]
           }).apps.first
         end
