@@ -94,7 +94,7 @@ class OpsDeploy::CLI::Notifier::Slack < OpsDeploy::CLI::Notifier::Generic
     @slack_notifier.ping "", channel: @options[:channel], attachments: [
       {
         fallback: message,
-        text: message,
+        text: "#{message} <!channel>",
         author_name: @stack.name,
         author_link: stack_link(@stack),
         color: "danger"
