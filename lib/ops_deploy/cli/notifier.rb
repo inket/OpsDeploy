@@ -70,6 +70,7 @@ class OpsDeploy::CLI::Notifier::Slack < OpsDeploy::CLI::Notifier::Generic
       {
         fallback: message,
         author_name: @stack.name,
+        author_link: stack_link(@stack),
         text: message
       }
     ]
@@ -82,6 +83,7 @@ class OpsDeploy::CLI::Notifier::Slack < OpsDeploy::CLI::Notifier::Generic
         fallback: message,
         text: message,
         author_name: @stack.name,
+        author_link: stack_link(@stack),
         color: "good"
       }
     ]
@@ -94,8 +96,14 @@ class OpsDeploy::CLI::Notifier::Slack < OpsDeploy::CLI::Notifier::Generic
         fallback: message,
         text: message,
         author_name: @stack.name,
+        author_link: stack_link(@stack),
         color: "danger"
       }
     ]
+  end
+
+  def stack_link(stack)
+    region = OpsDeploy::CLI.argument("aws-region", "AWS_REGION") || "us-east-1"
+    "https://console.aws.amazon.com/opsworks/home?region=#{region}#/stack/#{stack.stack_id}/stack"
   end
 end
