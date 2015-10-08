@@ -4,15 +4,19 @@ require 'ops_deploy'
 
 cli = OpsDeploy::CLI.new
 
-if OpsDeploy::CLI.argument("check-server")
-  cli.start_check_server
+if OpsDeploy::CLI.argument("server")
+  cli.start_server
+elsif OpsDeploy::CLI.argument("check-server")
+  puts "The 'check-server' argument is deprecated. Please use 'server'."
+  cli.start_server
 else
   stack = OpsDeploy::CLI.argument("stack", "STACK_ID")
   app_id = OpsDeploy::CLI.argument("app-id", "APP_ID")
   migrate = OpsDeploy::CLI.argument("migrate")
   check_via_proxy = OpsDeploy::CLI.argument("check-via-proxy")
+  wait_via_proxy = OpsDeploy::CLI.argument("wait-via-proxy")
 
   cli.start_deployment(stack, app_id, migrate) if OpsDeploy::CLI.argument("deploy")
-  cli.wait_for_deployments(stack) if OpsDeploy::CLI.argument("wait")
-  cli.check_instances(stack, check_via_proxy) if OpsDeploy::CLI.argument("check") or check_via_proxy
+  cli.wait_for_deployments(stack, wait_via_proxy) if OpsDeploy::CLI.argument("wait") || wait_via_proxy
+  cli.check_instances(stack, check_via_proxy) if OpsDeploy::CLI.argument("check") || check_via_proxy
 end

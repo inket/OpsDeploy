@@ -45,35 +45,42 @@ class OpsDeploy::CLI
     end
   end
 
-  def wait_for_deployments(stack_id_name_or_object)
+  def wait_for_deployments(stack_id_name_or_object, via_proxy = false)
     stack = find_stack(stack_id_name_or_object)
 
-    step_msg("Checking deployments...")
-    @main.deployments_callback = Proc.new {
-      |deployment|
-
-      puts
-
-      if (deployment.status == "successful")
-        success_msg("Deployment", "OK".green.bold, deployment.duration ? "(#{deployment.duration.to_s}s)" : "")
-      else
-        failure_msg("Deployment", "Failed".red.bold, deployment.duration ? "(#{deployment.duration.to_s}s)" : "")
-      end
-    }
-
-    waiter = @main.wait_for_deployments(stack)
-    if waiter
-      step_msg("Waiting for deployments to finish...")
-
-      print ".".blue
-      print ".".blue until waiter.join(1)
-
-      info_msg("Deployments finished")
+    if via_proxy
+      Pusher.url = OpsDeploy::CLI.argument("pusher-url", "PUSHER_URL", true)
+      Pusher['OpsDeploy'].trigger('wait_for_deployments', {
+        stack: stack.stack_id
+      })
     else
-      info_msg("No running deployments on stack", "'#{stack_id_name_or_object.blue}'")
-    end
+      step_msg("Checking deployments...")
+      @main.deployments_callback = Proc.new {
+        |deployment|
 
-    send_notification(stack)
+        puts
+
+        if (deployment.status == "successful")
+          success_msg("Deployment", "OK".green.bold, deployment.duration ? "(#{deployment.duration.to_s}s)" : "")
+        else
+          failure_msg("Deployment", "Failed".red.bold, deployment.duration ? "(#{deployment.duration.to_s}s)" : "")
+        end
+      }
+
+      waiter = @main.wait_for_deployments(stack)
+      if waiter
+        step_msg("Waiting for deployments to finish...")
+
+        print ".".blue
+        print ".".blue until waiter.join(1)
+
+        info_msg("Deployments finished")
+      else
+        info_msg("No running deployments on stack", "'#{stack_id_name_or_object.blue}'")
+      end
+
+      send_notification(stack)
+    end
   end
 
   def check_instances(stack_id_name_or_object, via_proxy = false)
@@ -115,11 +122,12 @@ class OpsDeploy::CLI
     end
   end
 
-  def start_check_server
+  def start_server
     pusher_comp = URI.parse(OpsDeploy::CLI.argument("pusher-url", "PUSHER_URL", true))
     PusherClient.logger.level = Logger::ERROR
     socket = PusherClient::Socket.new(pusher_comp.user, secure: true)
     socket.subscribe("OpsDeploy")
+
     socket["OpsDeploy"].bind("check_instances") do |data|
       begin
         info = data
@@ -127,6 +135,18 @@ class OpsDeploy::CLI
         stack_id = info["stack"] || info[:stack]
 
         check_instances(stack_id)
+      rescue StandardError => e
+        puts e
+      end
+    end
+
+    socket["OpsDeploy"].bind("wait_for_deployments") do |data|
+      begin
+        info = data
+        info = JSON.parse(data) if data.kind_of?(String)
+        stack_id = info["stack"] || info[:stack]
+
+        wait_for_deployments(stack_id)
       rescue StandardError => e
         puts e
       end
