@@ -30,7 +30,7 @@ ops.instances_check_callback = Proc.new {
 	|aws_instance_obj, http_response, exception|
 	# whatever
 }
-a_thread = ops.check_instances(stack_id).join
+a_thread = ops.check_instances(stack_id)
 a_thread.join
 
 ```
