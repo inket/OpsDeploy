@@ -227,6 +227,16 @@ module OpsDeploy
       @notifier.notify(stack)
       @notifier.reset
     end
+
+    def puts(message = nil)
+      $stdout.puts(message) if message
+      $stdout.flush
+    end
+
+    def print(message = nil)
+      $stdout.print(message) if message
+      $stdout.flush
+    end
   end
 end
 
