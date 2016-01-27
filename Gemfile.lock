@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    ops_deploy (0.1.4)
+    ops_deploy (0.1.6)
       aws-sdk (~> 2.1)
       colorize (~> 0.7)
       httparty (~> 0.13)
@@ -52,3 +52,6 @@ DEPENDENCIES
   pusher-client (~> 0.6)
   rake
   slack-notifier (~> 1.2)
+
+BUNDLED WITH
+   1.11.2

@@ -1,3 +1,3 @@
 module OpsDeploy
-  VERSION = '0.1.6b'
+  VERSION = '0.1.6'
 end
