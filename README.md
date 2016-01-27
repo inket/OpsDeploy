@@ -4,13 +4,13 @@ A simple gem to perform deployment & checks on AWS OpsWorks. You can deploy, wai
 
 ### Usage
 
-```
+```shell
 gem install ops_deploy
 ```
 
 In your code:
 
-```
+```ruby
 require 'ops_deploy'
 ops = OpsDeploy.new(aws_config)
 
@@ -19,16 +19,16 @@ success = ops.start_deployment(stack_id, app_id, migrate)
 
 # Wait for deployments (async)
 ops.deployments_callback = Proc.new {
-	|aws_deployment_obj|
-	# whatever
+  |aws_deployment_obj|
+  # whatever
 }
 a_thread = ops.wait_for_deployments(stack_id)
 a_thread.join
 
 # Check instances (async)
 ops.instances_check_callback = Proc.new {
-	|aws_instance_obj, http_response, exception|
-	# whatever
+  |aws_instance_obj, http_response, exception|
+  # whatever
 }
 a_thread = ops.check_instances(stack_id)
 a_thread.join
@@ -37,7 +37,7 @@ a_thread.join
 
 or using the CLI:
 
-```
+```shell
 opsdeploy <tasks> --aws-region=<aws_region> --aws-profile=<...> --stack=<stack_name_or_id> --slack-webhook-url=<...> --slack-username=<...> --slack-channel=<...>
 ```
 
@@ -50,7 +50,7 @@ The tasks are:
 
 Example:
 
-```
+```shell
 opsdeploy deploy wait check --stack="Example" --aws-region="us-east-1"
 ```
 
