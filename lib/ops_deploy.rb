@@ -22,7 +22,9 @@ class OpsDeploy
     @opsworks.describe_stacks.stacks
   end
 
-  def start_deployment(stack_id_name_or_object, application_id_name_or_object = nil, migrate = false)
+  def start_deployment(stack_id_name_or_object,
+                       application_id_name_or_object = nil,
+                       migrate = false)
     stack = find_stack(stack_id_name_or_object)
     app = find_app(stack, application_id_name_or_object)
 
@@ -39,7 +41,8 @@ class OpsDeploy
   def wait_for_deployments(stack_id_name_or_object)
     stack = find_stack(stack_id_name_or_object)
 
-    running_deployments = @opsworks.describe_deployments(stack_id: stack.stack_id).deployments.select do |deployment|
+    running_deployments = @opsworks.describe_deployments(stack_id: stack.stack_id)
+                          .deployments.select do |deployment|
       deployment.status == 'running'
     end
 
@@ -90,6 +93,7 @@ class OpsDeploy
           found_stack = @opsworks.describe_stacks(stack_ids: [stack_id_name_or_object]).stacks.first
         end
       rescue Aws::OpsWorks::Errors::ResourceNotFoundException
+        found_stack = nil
       end
 
       if found_stack.nil?
@@ -103,7 +107,8 @@ class OpsDeploy
     end
 
     found_stack = stack_id_name_or_object if found_stack.nil?
-    invalid_stack_error = StandardError.new("Invalid stack #{found_stack} (#{stack_id_name_or_object}).")
+    error_message = "Invalid stack #{found_stack} (#{stack_id_name_or_object})."
+    invalid_stack_error = StandardError.new(error_message)
     fail invalid_stack_error unless found_stack.is_a?(Aws::OpsWorks::Types::Stack)
 
     found_stack
@@ -118,6 +123,7 @@ class OpsDeploy
           found_app = @opsworks.describe_apps(app_ids: [application_id_name_or_object]).apps.first
         end
       rescue Aws::OpsWorks::Errors::ResourceNotFoundException
+        found_app = nil
       end
 
       if found_app.nil?
@@ -134,7 +140,8 @@ class OpsDeploy
     end
 
     found_app = application_id_name_or_object if found_app.nil?
-    invalid_app_error = StandardError.new("Invalid app #{found_app} (#{application_id_name_or_object}).")
+    error_message = "Invalid app #{found_app} (#{application_id_name_or_object})."
+    invalid_app_error = StandardError.new(error_message)
     fail invalid_app_error unless found_app.is_a?(Aws::OpsWorks::Types::App)
 
     found_app

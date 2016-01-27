@@ -161,7 +161,10 @@ module OpsDeploy
       end
 
       if required && value.nil?
-        fail StandardError.new("Argument '#{argv_name}' unspecified. Please set #{env_name ? 'the environment variable ' + env_name + ' or ' : ''}the argument --#{argv_name}=<value>")
+        env_name_message = env_name ? "the environment variable #{env_name} or " : ''
+        error = "Argument '#{argv_name}' unspecified."
+        suggestion = "Please set #{env_name_message}the argument --#{argv_name}=<value>"
+        fail StandardError.new("#{error} #{suggestion}")
       end
 
       value
