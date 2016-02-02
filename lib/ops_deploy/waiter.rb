@@ -26,7 +26,7 @@ class OpsDeploy::Waiter < Thread
 end
 
 # A waiter for deployments
-class DeploymentWaiter < OpsDeploy::Waiter
+class OpsDeploy::DeploymentWaiter < OpsDeploy::Waiter
   def initialize(opsworks, deployment, callback = nil)
     super() do
       find_deployment(opsworks, deployment.deployment_id)
