@@ -1,3 +1,3 @@
-module OpsDeploy
+class OpsDeploy
   VERSION = '0.1.6'
 end
