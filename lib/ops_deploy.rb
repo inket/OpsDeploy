@@ -149,4 +149,5 @@ class OpsDeploy
 end
 
 require_relative 'ops_deploy/waiter'
+require_relative 'ops_deploy/version'
 require_relative 'ops_deploy/cli'

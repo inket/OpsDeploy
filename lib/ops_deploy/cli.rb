@@ -140,7 +140,7 @@ class OpsDeploy::CLI
       end
     end
 
-    info_msg('Started OpsDeploy server')
+    info_msg("Started OpsDeploy server #{OpsDeploy::VERSION}")
     socket.connect
   end
 
