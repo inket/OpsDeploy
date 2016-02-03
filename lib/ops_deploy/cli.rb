@@ -125,8 +125,11 @@ class OpsDeploy::CLI
         info = data
         info = JSON.parse(data) if data.is_a?(String)
         stack_id = info['stack'] || info[:stack]
+        slack_webhook_url = info['slack'] || info[:slack]
 
-        check_instances(stack_id)
+        with_slack_webhook(slack_webhook_url) do
+          check_instances(stack_id)
+        end
       rescue StandardError => e
         puts e
       end
@@ -137,8 +140,11 @@ class OpsDeploy::CLI
         info = data
         info = JSON.parse(data) if data.is_a?(String)
         stack_id = info['stack'] || info[:stack]
+        slack_webhook_url = info['slack'] || info[:slack]
 
-        wait_for_deployments(stack_id)
+        with_slack_webhook(slack_webhook_url) do
+          wait_for_deployments(stack_id)
+        end
       rescue StandardError => e
         puts e
       end
@@ -146,6 +152,19 @@ class OpsDeploy::CLI
 
     info_msg("Started OpsDeploy server #{OpsDeploy::VERSION}")
     socket.connect
+  end
+
+  def with_slack_webhook(slack_webhook_url = nil)
+    old_notifier = @notifier
+    if slack_webhook_url && !slack_webhook_url.strip.empty?
+      @notifier = OpsDeploy::CLI::Notifier.new(slack: {
+                                               webhook_url: slack_webhook_url
+                                               })
+    end
+
+    yield
+
+    @notifier = old_notifier
   end
 
   def self.argument(argv_name, env_name = nil, required = false)
