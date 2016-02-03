@@ -47,8 +47,10 @@ class OpsDeploy::CLI
     stack = find_stack(stack_id_name_or_object)
 
     if via_proxy
+      slack_webhook_url = OpsDeploy::CLI.argument('slack-webhook-url', 'SLACK_WEBHOOK_URL')
       Pusher.url = OpsDeploy::CLI.argument('pusher-url', 'PUSHER_URL', true)
-      Pusher['OpsDeploy'].trigger('wait_for_deployments', stack: stack.stack_id)
+      Pusher.trigger('OpsDeploy', 'wait_for_deployments', stack: stack.stack_id,
+                                                          slack: slack_webhook_url)
     else
       step_msg('Checking deployments...')
       @main.deployments_callback = proc { |deployment|
@@ -80,8 +82,10 @@ class OpsDeploy::CLI
     stack = find_stack(stack_id_name_or_object)
 
     if via_proxy
+      slack_webhook_url = OpsDeploy::CLI.argument('slack-webhook-url', 'SLACK_WEBHOOK_URL')
       Pusher.url = OpsDeploy::CLI.argument('pusher-url', 'PUSHER_URL', true)
-      Pusher['OpsDeploy'].trigger('check_instances', stack: stack.stack_id)
+      Pusher.trigger('OpsDeploy', 'check_instances', stack: stack.stack_id,
+                                                     slack: slack_webhook_url)
     else
       @main.instances_check_callback = proc { |instance, response, error|
         puts
