@@ -47,10 +47,9 @@ class OpsDeploy::CLI
     stack = find_stack(stack_id_name_or_object)
 
     if via_proxy
-      slack_webhook_url = OpsDeploy::CLI.argument('slack-webhook-url', 'SLACK_WEBHOOK_URL')
       Pusher.url = OpsDeploy::CLI.argument('pusher-url', 'PUSHER_URL', true)
       Pusher.trigger('OpsDeploy', 'wait_for_deployments', stack: stack.stack_id,
-                                                          slack: slack_webhook_url)
+                                                          slack: @notifier.options[:slack])
     else
       step_msg('Checking deployments...')
       @main.deployments_callback = proc { |deployment|
@@ -82,10 +81,9 @@ class OpsDeploy::CLI
     stack = find_stack(stack_id_name_or_object)
 
     if via_proxy
-      slack_webhook_url = OpsDeploy::CLI.argument('slack-webhook-url', 'SLACK_WEBHOOK_URL')
       Pusher.url = OpsDeploy::CLI.argument('pusher-url', 'PUSHER_URL', true)
       Pusher.trigger('OpsDeploy', 'check_instances', stack: stack.stack_id,
-                                                     slack: slack_webhook_url)
+                                                     slack: @notifier.options[:slack])
     else
       @main.instances_check_callback = proc { |instance, response, error|
         puts
@@ -123,12 +121,10 @@ class OpsDeploy::CLI
     socket['OpsDeploy'].bind('check_instances') do |data|
       begin
         info = data
-        info = JSON.parse(data) if data.is_a?(String)
-        stack_id = info['stack'] || info[:stack]
-        slack_webhook_url = info['slack'] || info[:slack]
+        info = symbolize_keys(JSON.parse(data)) if data.is_a?(String)
 
-        with_slack_webhook(slack_webhook_url) do
-          check_instances(stack_id)
+        with_slack(info[:slack]) do
+          check_instances(info[:stack])
         end
       rescue StandardError => e
         puts e
@@ -138,12 +134,10 @@ class OpsDeploy::CLI
     socket['OpsDeploy'].bind('wait_for_deployments') do |data|
       begin
         info = data
-        info = JSON.parse(data) if data.is_a?(String)
-        stack_id = info['stack'] || info[:stack]
-        slack_webhook_url = info['slack'] || info[:slack]
+        info = symbolize_keys(JSON.parse(data)) if data.is_a?(String)
 
-        with_slack_webhook(slack_webhook_url) do
-          wait_for_deployments(stack_id)
+        with_slack(info[:slack]) do
+          wait_for_deployments(info[:stack])
         end
       rescue StandardError => e
         puts e
@@ -154,13 +148,9 @@ class OpsDeploy::CLI
     socket.connect
   end
 
-  def with_slack_webhook(slack_webhook_url = nil)
+  def with_slack(slack_options = nil)
     old_notifier = @notifier
-    if slack_webhook_url && !slack_webhook_url.strip.empty?
-      @notifier = OpsDeploy::CLI::Notifier.new(slack: {
-                                               webhook_url: slack_webhook_url
-                                               })
-    end
+    @notifier = OpsDeploy::CLI::Notifier.new(slack: slack_options) if slack_options
 
     yield
 
@@ -258,6 +248,21 @@ class OpsDeploy::CLI
   def print(message = nil)
     $stdout.print(message)
     $stdout.flush
+  end
+
+  def symbolize_keys(hash)
+    hash.inject({}){|result, (key, value)|
+      new_key = case key
+                when String then key.to_sym
+                else key
+                end
+      new_value = case value
+                  when Hash then symbolize_keys(value)
+                  else value
+                  end
+      result[new_key] = new_value
+      result
+    }
   end
 end
 

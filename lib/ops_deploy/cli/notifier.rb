@@ -69,6 +69,7 @@ end
 # A notification class for Slack
 class OpsDeploy::CLI::Notifier::Slack < OpsDeploy::CLI::Notifier::Generic
   attr_accessor :slack_notifier
+  attr_accessor :options
 
   def initialize(stack, options)
     @stack = stack
