@@ -251,12 +251,12 @@ class OpsDeploy::CLI
   end
 
   def puts(message = nil)
-    $stdout.puts(message) if message
+    $stdout.puts(message)
     $stdout.flush
   end
 
   def print(message = nil)
-    $stdout.print(message) if message
+    $stdout.print(message)
     $stdout.flush
   end
 end
