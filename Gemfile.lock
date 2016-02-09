@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    ops_deploy (0.1.8)
+    ops_deploy (0.1.8.1)
       aws-sdk (~> 2.1)
       colorize (~> 0.7)
       httparty (~> 0.13)
