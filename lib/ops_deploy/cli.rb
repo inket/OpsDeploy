@@ -8,6 +8,13 @@ class OpsDeploy::CLI
     profile = OpsDeploy::CLI.argument('aws-profile', 'AWS_PROFILE')
     config[:credentials] = Aws::SharedCredentials.new(profile_name: profile) if profile
 
+    aws_access_key_id = OpsDeploy::CLI.argument('aws-access-key-id', 'AWS_ACCESS_KEY_ID')
+    aws_secret_access_key = OpsDeploy::CLI.argument('aws-secret-access-key', 'AWS_SECRET_ACCESS_KEY')
+    if aws_access_key_id && aws_secret_access_key
+      config[:access_key_id] = aws_access_key_id
+      config[:secret_access_key] = aws_secret_access_key
+    end
+
     @main = OpsDeploy.new(config)
     @stacks = {}
     @notifier = OpsDeploy::CLI::Notifier.new(slack: {
