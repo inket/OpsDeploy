@@ -3,12 +3,14 @@ class OpsDeploy::CLI::Notifier
   attr_accessor :options
   attr_accessor :messages
   attr_accessor :notification_type
+  attr_accessor :notify_user
 
   def initialize(options)
     @options = options
     @options.delete(:slack) if @options[:slack].nil? || @options[:slack][:webhook_url].nil?
     @messages = OpsDeploy::CLI::Notifier::Messages.new
     @notification_type = :info
+    @notify_user = @options[:slack] ? @options[:slack][:notify_user] : nil
   end
 
   def notify(stack)

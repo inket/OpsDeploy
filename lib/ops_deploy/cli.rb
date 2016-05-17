@@ -18,10 +18,11 @@ class OpsDeploy::CLI
     @main = OpsDeploy.new(config)
     @stacks = {}
     @notifier = OpsDeploy::CLI::Notifier.new(slack: {
-                                               webhook_url: OpsDeploy::CLI.argument('slack-webhook-url', 'SLACK_WEBHOOK_URL'),
-                                               username: OpsDeploy::CLI.argument('slack-username', 'SLACK_USERNAME'),
-                                               channel: OpsDeploy::CLI.argument('slack-channel', 'SLACK_CHANNEL')
-                                             })
+      webhook_url: OpsDeploy::CLI.argument('slack-webhook-url', 'SLACK_WEBHOOK_URL'),
+      username: OpsDeploy::CLI.argument('slack-username', 'SLACK_USERNAME'),
+      channel: OpsDeploy::CLI.argument('slack-channel', 'SLACK_CHANNEL'),
+      notify_user: OpsDeploy::CLI.argument('slack-notify-user', 'SLACK_NOTIFY_USER')
+    })
 
     @notification_messages = {
       info: [],
@@ -59,12 +60,18 @@ class OpsDeploy::CLI
                                                           slack: @notifier.options[:slack])
     else
       step_msg('Checking deployments...')
+      notify_user = @notifier.notify_user
+
       @main.deployments_callback = proc { |deployment|
         puts
         if (deployment.status == 'successful')
-          success_msg('Deployment', 'OK'.green.bold, deployment.duration ? "(#{deployment.duration}s)" : '')
+          success_msg('Deployment', 'OK'.green.bold,
+                      deployment.duration ? "(#{deployment.duration}s)" : '',
+                      notify_user ? "@#{notify_user}" : '')
         else
-          failure_msg('Deployment', 'Failed'.red.bold, deployment.duration ? "(#{deployment.duration}s)" : '')
+          failure_msg('Deployment', 'Failed'.red.bold,
+                      deployment.duration ? "(#{deployment.duration}s)" : '',
+                      notify_user ? "@#{notify_user}" : '')
         end
       }
 
@@ -77,7 +84,8 @@ class OpsDeploy::CLI
 
         info_msg('Deployments finished')
       else
-        info_msg('No running deployments on stack', "'#{stack_id_name_or_object.blue}'")
+        info_msg('No running deployments on stack', "'#{stack_id_name_or_object.blue}'",
+                 notify_user ? "@#{notify_user}" : '')
       end
 
       send_notification(stack)
