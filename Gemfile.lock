@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    ops_deploy (0.1.8.1)
+    ops_deploy (0.1.8.2)
       aws-sdk (~> 2.1)
       colorize (~> 0.7)
       httparty (~> 0.13)
@@ -54,4 +54,4 @@ DEPENDENCIES
   slack-notifier (~> 1.2)
 
 BUNDLED WITH
-   1.11.2
+   1.12.3
