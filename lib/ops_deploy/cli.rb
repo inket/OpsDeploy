@@ -60,18 +60,15 @@ class OpsDeploy::CLI
                                                           slack: @notifier.options[:slack])
     else
       step_msg('Checking deployments...')
-      notify_user = @notifier.notify_user
 
       @main.deployments_callback = proc { |deployment|
         puts
         if (deployment.status == 'successful')
           success_msg('Deployment', 'OK'.green.bold,
-                      deployment.duration ? "(#{deployment.duration}s)" : '',
-                      notify_user ? "@#{notify_user}" : '')
+                      deployment.duration ? "(#{deployment.duration}s)" : '')
         else
           failure_msg('Deployment', 'Failed'.red.bold,
-                      deployment.duration ? "(#{deployment.duration}s)" : '',
-                      notify_user ? "@#{notify_user}" : '')
+                      deployment.duration ? "(#{deployment.duration}s)" : '')
         end
       }
 
@@ -84,8 +81,7 @@ class OpsDeploy::CLI
 
         info_msg('Deployments finished')
       else
-        info_msg('No running deployments on stack', "'#{stack_id_name_or_object.blue}'",
-                 notify_user ? "@#{notify_user}" : '')
+        info_msg('No running deployments on stack', "'#{stack_id_name_or_object.blue}'")
       end
 
       send_notification(stack)

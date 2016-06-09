@@ -3,14 +3,12 @@ class OpsDeploy::CLI::Notifier
   attr_accessor :options
   attr_accessor :messages
   attr_accessor :notification_type
-  attr_accessor :notify_user
 
   def initialize(options)
     @options = options
     @options.delete(:slack) if @options[:slack].nil? || @options[:slack][:webhook_url].nil?
     @messages = OpsDeploy::CLI::Notifier::Messages.new
     @notification_type = :info
-    @notify_user = @options[:slack] ? @options[:slack][:notify_user] : nil
   end
 
   def notify(stack)
@@ -82,40 +80,57 @@ class OpsDeploy::CLI::Notifier::Slack < OpsDeploy::CLI::Notifier::Generic
 
   def notify(message)
     message = message.gsub(/\[[0-9;]+?m/, '')
-    @slack_notifier.ping '', channel: @options[:channel], attachments: [
-      {
-        fallback: message,
-        author_name: @stack.name,
-        author_link: stack_link(@stack),
-        text: message
-      }
-    ]
+
+    recipients.each do |recipient|
+      @slack_notifier.ping '', channel: recipient, attachments: [
+        {
+          fallback: message,
+          author_name: @stack.name,
+          author_link: stack_link(@stack),
+          text: message
+        }
+      ]
+    end
   end
 
   def success_notify(message)
     message = message.gsub(/\[[0-9;]+?m/, '')
-    @slack_notifier.ping '', channel: @options[:channel], attachments: [
-      {
-        fallback: message,
-        text: message,
-        author_name: @stack.name,
-        author_link: stack_link(@stack),
-        color: 'good'
-      }
-    ]
+
+    recipients.each do |recipient|
+      @slack_notifier.ping '', channel: recipient, attachments: [
+        {
+          fallback: message,
+          text: message,
+          author_name: @stack.name,
+          author_link: stack_link(@stack),
+          color: 'good'
+        }
+      ]
+    end
   end
 
   def failure_notify(message)
     message = message.gsub(/\[[0-9;]+?m/, '')
-    @slack_notifier.ping '', channel: @options[:channel], attachments: [
-      {
-        fallback: message,
-        text: "#{message} <!channel>",
-        author_name: @stack.name,
-        author_link: stack_link(@stack),
-        color: 'danger'
-      }
-    ]
+
+    recipients.each do |recipient|
+      @slack_notifier.ping '', channel: recipient, attachments: [
+        {
+          fallback: message,
+          text: "#{message} <!channel>",
+          author_name: @stack.name,
+          author_link: stack_link(@stack),
+          color: 'danger'
+        }
+      ]
+    end
+  end
+
+  private
+
+  def recipients
+    names = [options[:channel]]
+    names << "@#{options[:notify_user]}" if options[:notify_user]
+    names
   end
 
   def stack_link(stack)
