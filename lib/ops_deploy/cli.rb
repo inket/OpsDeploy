@@ -35,7 +35,7 @@ class OpsDeploy::CLI
 
   def post_latest_commit(stack_id_name_or_object)
     stack = find_stack(stack_id_name_or_object)
-    latest_commit_description = `git show --pretty`
+    latest_commit_description = `git log -1 --pretty=medium`
     step_msg('Latest commit: ', latest_commit_description)
     send_notification(stack)
   end
