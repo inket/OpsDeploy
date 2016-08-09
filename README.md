@@ -71,3 +71,33 @@ Output:
 ✓ Response from rails-app1: 200 OK
 // Response check finished
 ```
+
+If you want to post info about the latest commit to slack:
+WARNING: This posts the latest commit in the current local git branch, not the latest one on github
+
+```shell
+opsdeploy deploy wait check --stack="Example" --aws-region="us-east-1" --post-latest-commit=true
+```
+
+Output:
+
+```
+-> Getting stack 'Example'...
+-> Found stack 'Example' (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+-> Latest commit:  commit b5fed5c32df0613df06a8e1452d194cafabc22bc
+Author: Martin Morava <martin.morava@example.com>
+Date:   Tue Aug 9 11:49:56 2016 +0200
+
+    Enable Slack notifications about the latest commit
+-> Starting deployment on stack 'Example'...
+✓ Deployment started on stack 'Example'
+-> Checking deployments...
+-> Waiting for deployments to finish...
+..............................................................
+✓ Deployment OK (58s)
+// Deployments finished
+-> Checking instances' HTTP response...
+.
+✓ Response from rails-app1: 200 OK
+// Response check finished
+```
