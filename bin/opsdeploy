@@ -18,8 +18,10 @@ else
   check_via_proxy = OpsDeploy::CLI.argument('check-via-proxy')
   wait = OpsDeploy::CLI.argument('wait')
   wait_via_proxy = OpsDeploy::CLI.argument('wait-via-proxy')
+  post_latest_commit = OpsDeploy::CLI.argument('post-latest-commit')
 
   cli.start_deployment(stack, app_id, migrate) if deploy
+  cli.post_latest_commit(stack) if post_latest_commit
   cli.wait_for_deployments(stack, wait_via_proxy) if wait || wait_via_proxy
   cli.check_instances(stack, check_via_proxy) if check || check_via_proxy
 end

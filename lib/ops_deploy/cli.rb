@@ -33,6 +33,13 @@ class OpsDeploy::CLI
     @notification_failure = false
   end
 
+  def post_latest_commit(stack_id_name_or_object)
+    stack = find_stack(stack_id_name_or_object)
+    latest_commit_description = `git log -1 --pretty=medium`
+    step_msg('Latest commit: ', latest_commit_description)
+    send_notification(stack)
+  end
+
   def start_deployment(stack_id_name_or_object, application_id = nil, migrate = false)
     stack = find_stack(stack_id_name_or_object)
 
