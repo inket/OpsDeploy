@@ -4,6 +4,7 @@ require 'colorize'
 require 'slack-notifier'
 require 'pusher'
 require 'pusher-client'
+require 'octokit'
 
 class OpsDeploy
   attr_accessor :waiter

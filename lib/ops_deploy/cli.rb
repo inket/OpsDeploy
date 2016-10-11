@@ -17,6 +17,23 @@ class OpsDeploy::CLI
 
     @main = OpsDeploy.new(config)
     @stacks = {}
+
+    github_token = OpsDeploy::CLI.argument('github-token', 'GITHUB_TOKEN')
+    auto_inactive = OpsDeploy::CLI.argument('github-deployment-auto-inactive')
+    auto_inactive = [nil, "", "1", "true", "TRUE"].include?(auto_inactive)
+
+    @github = OpsDeploy::CLI::GitHub.new(github_token, {
+      owner: OpsDeploy::CLI.argument('github-deployment-owner'),
+      repo: OpsDeploy::CLI.argument('github-deployment-repo'),
+      deployment_id: OpsDeploy::CLI.argument('github-deployment-deployment-id'),
+      options: {
+        log_url: OpsDeploy::CLI.argument('github-deployment-log-url'),
+        description: OpsDeploy::CLI.argument('github-deployment-description'),
+        environment_url: OpsDeploy::CLI.argument('github-deployment-environment-url'),
+        auto_inactive: auto_inactive
+      }
+    })
+
     @notifier = OpsDeploy::CLI::Notifier.new(slack: {
       webhook_url: OpsDeploy::CLI.argument('slack-webhook-url', 'SLACK_WEBHOOK_URL'),
       username: OpsDeploy::CLI.argument('slack-username', 'SLACK_USERNAME'),
@@ -64,18 +81,23 @@ class OpsDeploy::CLI
     if via_proxy
       Pusher.url = OpsDeploy::CLI.argument('pusher-url', 'PUSHER_URL', true)
       Pusher.trigger('OpsDeploy', 'wait_for_deployments', stack: stack.stack_id,
-                                                          slack: @notifier.options[:slack])
+                                                          slack: @notifier.options[:slack],
+                                                          github: @github.deployment_info)
     else
       step_msg('Checking deployments...')
+
+      github = @github.dup
 
       @main.deployments_callback = proc { |deployment|
         puts
         if (deployment.status == 'successful')
           success_msg('Deployment', 'OK'.green.bold,
                       deployment.duration ? "(#{deployment.duration}s)" : '')
+          github.create_deployment_status("success")
         else
           failure_msg('Deployment', 'Failed'.red.bold,
                       deployment.duration ? "(#{deployment.duration}s)" : '')
+          github.create_deployment_status("error")
         end
       }
 
@@ -153,6 +175,8 @@ class OpsDeploy::CLI
       begin
         info = data
         info = symbolize_keys(JSON.parse(data)) if data.is_a?(String)
+
+        @github.deployment_info = info[:github]
 
         with_slack(info[:slack]) do
           wait_for_deployments(info[:stack])
@@ -284,4 +308,5 @@ class OpsDeploy::CLI
   end
 end
 
+require_relative 'cli/github'
 require_relative 'cli/notifier'

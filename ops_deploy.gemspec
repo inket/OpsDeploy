@@ -23,4 +23,5 @@ Gem::Specification.new do |s|
   s.add_dependency 'slack-notifier', '~> 1.2'
   s.add_dependency 'pusher', '~> 0.14'
   s.add_dependency 'pusher-client', '~> 0.6'
+  s.add_dependency 'octokit', '~> 4.3'
 end
